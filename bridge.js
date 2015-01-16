@@ -7,7 +7,7 @@ var page_id = 1;
 
 var callback_stack = [];
 
-phantom.onError = function (msg, trace) {
+slimer.onError = function (msg, trace) {
 	var msgStack = ['PHANTOM ERROR: ' + msg];
 	if (trace && trace.length) {
 	    msgStack.push('TRACE:');
@@ -16,7 +16,7 @@ phantom.onError = function (msg, trace) {
 	    });
 	}
 	system.stderr.writeLine(msgStack.join('\n'));
-	phantom.exit(1);
+	slimer.exit(1);
 }
 
 function page_open (res, page, args) {
@@ -157,31 +157,31 @@ var global_methods = {
 	},
 
 	injectJs: function (filename) {
-		return phantom.injectJs(filename);
+		return slimer.injectJs(filename);
 	},
 
 	exit: function (code) {
-		return phantom.exit(code);
+		return slimer.exit(code);
 	},
 
 	addCookie: function (cookie) {
-		return phantom.addCookie(cookie);
+		return slimer.addCookie(cookie);
 	},
 
 	clearCookies: function () {
-		return phantom.clearCookies();
+		return slimer.clearCookies();
 	},
 
 	deleteCookie: function (name) {
-		return phantom.deleteCookie(name);
+		return slimer.deleteCookie(name);
 	},
 
 	getProperty: function (prop) {
-		return phantom[prop];
+		return slimer[prop];
 	},
 
 	setProperty: function (prop, value) {
-		phantom[prop] = value;
+		slimer[prop] = value;
 		return true;
 	},
 }

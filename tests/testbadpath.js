@@ -1,8 +1,8 @@
-var phantom=require('../node-phantom-simple');
+var slimer=require('../node-slimerjs');
 
-exports.testPhantomCreatePagePath = function(test) {
-    phantom.create(function (error,ph) {
+exports.testSlimerCreatePagePath = function(test) {
+    slimer.create(function (error,sl) {
         test.notStrictEqual(null, error, "Bad path produces an error");
         test.done();
-    },{phantomPath:'@@@', ignoreErrorPattern: /execvp/});
+    },{slimerPath:'@@@', ignoreErrorPattern: /execvp/});
 };

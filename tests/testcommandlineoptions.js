@@ -1,10 +1,10 @@
 var http = require('http');
 var url = require('url');
 var os = require('os');
-var phantom = require('../node-phantom-simple');
+var slimer = require('../node-slimerjs');
 var usingProxy = false;
 
-var phantomInstance, proxyServer;
+var slimerInstance, proxyServer;
 
 
 module.exports = {
@@ -12,7 +12,7 @@ module.exports = {
         proxyServer = http.createServer(function (request, response) {
             console.log("Req!");
             var requestedUrl = url.parse(request.url);
-            if(requestedUrl.path === '/testPhantomPagePushNotifications'){
+            if(requestedUrl.path === '/testSlimerPagePushNotifications'){
                 usingProxy = true;
                 response.writeHead(200,{"Content-Type": "text/html"});
                 response.end('okay');
@@ -38,7 +38,7 @@ module.exports = {
             req.on('error', function (error) {
                 console.log(error);
                 response.end();
-                phantomInstance && phantomInstance.exit();
+                slimerInstance && slimerInstance.exit();
                 proxyServer.close();
             });
             req.end();
@@ -57,12 +57,12 @@ module.exports = {
             test.done();
             return;
         }
-        phantom.create(errOr(function (ph) {
-            phantomInstance = ph;
-            ph.createPage(errOr(function (page) {
-                page.open('http://localhost/testPhantomPagePushNotifications', errOr(function () {
+        slimer.create(errOr(function (sl) {
+            slimerInstance = sl;
+            sl.createPage(errOr(function (page) {
+                page.open('http://localhost/testSlimerPagePushNotifications', errOr(function () {
                     console.log("Got localhost from somewhere...");
-                    ph.exit(function () {
+                    sl.exit(function () {
                         test.equal(usingProxy, true, "Check if using proxy");
                         test.done();
                     });

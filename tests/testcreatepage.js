@@ -1,11 +1,11 @@
-var phantom=require('../node-phantom-simple');
+var slimer=require('../node-slimerjs');
 
-exports.testPhantomCreatePage = function(test) {
-    phantom.create(function (error, ph) {
+exports.testSlimerCreatePage = function(test) {
+    slimer.create(function (error, sl) {
         test.ifError(error);
-        ph.createPage(function (err,page) {
+        sl.createPage(function (err,page) {
             test.ifError(err);
-            ph.exit();
+            sl.exit();
             test.done();
         });
     });

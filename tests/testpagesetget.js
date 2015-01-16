@@ -1,9 +1,9 @@
-var phantom = require('../node-phantom-simple');
+var slimer = require('../node-slimerjs');
 
-exports.testPhantomPageSetGet=function (test) {
-    phantom.create(function (error, ph){
+exports.testSlimerPageSetGet=function (test) {
+    slimer.create(function (error, sl){
         test.ifError(error);
-        ph.createPage(function (err, page){
+        sl.createPage(function (err, page){
             test.ifError(err);
             page.get('viewportSize',function (err, oldValue) {
                 test.ifError(err);
@@ -20,13 +20,13 @@ exports.testPhantomPageSetGet=function (test) {
                                 test.equal(zoomValue, rnd);
                                 page.get('settings',function (err, oldSettings) {
                                     test.ifError(err);
-                                    page.set('settings', {'userAgent':'node-phantom tester'}, function (err) {
+                                    page.set('settings', {'userAgent':'node-slimer tester'}, function (err) {
                                         test.ifError(err);
                                         page.get('settings',function (err, newSettings) {
                                             test.ifError(err);
                                             test.notEqual(oldSettings.userAgent, newSettings.userAgent);
-                                            ph.on('exit', function () { test.done() });
-                                            ph.exit();
+                                            sl.on('exit', function () { test.done() });
+                                            sl.exit();
                                         });
                                     });
                                 });

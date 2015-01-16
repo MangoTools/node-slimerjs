@@ -1,5 +1,5 @@
 var http = require('http');
-var phantom = require('../node-phantom-simple');
+var slimer = require('../node-slimerjs');
 var server;
 
 module.exports = {
@@ -18,10 +18,10 @@ module.exports = {
     tearDown: function (cb) {
         server.close(cb);
     },
-    testPhantomPageEvaluate: function (test) {
-        phantom.create(function (error, ph) {
-            test.ifError(error, "phantom error");
-            ph.createPage(function (err, page) {
+    testSlimerPageEvaluate: function (test) {
+        slimer.create(function (error, sl) {
+            test.ifError(error, "slimer error");
+            sl.createPage(function (err, page) {
                 test.ifError(err, "createPage error");
                 page.open('http://localhost:'+server.address().port, function (err, status) {
                     test.ifError(err, "page open error");
@@ -34,10 +34,10 @@ module.exports = {
                             test.ifError(err, "page.evaluate error");
                             test.equal(result[0], 'Hello Test', "Script was executed");
                             test.equal(result[1], 1, "Added a new script tag");
-                            ph.on('exit', function () {
+                            sl.on('exit', function () {
                                 test.done();
                             });
-                            ph.exit();
+                            sl.exit();
                         });
                     });
                 });

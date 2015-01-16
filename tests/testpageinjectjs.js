@@ -1,5 +1,5 @@
 var http = require('http');
-var phantom = require('../node-phantom-simple');
+var slimer = require('../node-slimerjs');
 var server;
 
 module.exports = {
@@ -19,10 +19,10 @@ module.exports = {
     tearDown: function (cb) {
         server.close(cb);
     },
-    testPhantomPageInjectJs: function (test) {
-        phantom.create(function(error,ph){
+    testSlimerPageInjectJs: function (test) {
+        slimer.create(function(error,sl){
             test.ifError(error);
-            ph.createPage(function(err,page){
+            sl.createPage(function(err,page){
                 test.ifError(err);
                 page.open('http://localhost:'+server.address().port,function(err,status){
                     test.ifError(err);
@@ -35,11 +35,11 @@ module.exports = {
                         },function(err,result){
                             test.ifError(err);
                             test.equal(result[0],'Hello Test');   //the script should have been executed
-                            test.equal(result[1],0);              //it should not have added a new script-tag (see: https://groups.google.com/forum/?fromgroups#!topic/phantomjs/G4xcnSLrMw8)
-                            ph.on('exit', function () {
+                            test.equal(result[1],0);
+                            sl.on('exit', function () {
                                 test.done();
                             })
-                            ph.exit();
+                            sl.exit();
                         });
                     });
                 });

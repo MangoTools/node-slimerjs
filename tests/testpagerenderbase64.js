@@ -1,5 +1,5 @@
 var http = require('http');
-var phantom = require('../node-phantom-simple');
+var slimer = require('../node-slimerjs');
 var fs = require('fs');
 var crypto = require('crypto');
 
@@ -30,10 +30,10 @@ module.exports = {
     tearDown: function (cb) {
         server.close(cb);
     },
-    testPhantomPageRenderBase64: function (test) {
-        phantom.create(function (error,ph) {
+    testSlimerPageRenderBase64: function (test) {
+        slimer.create(function (error,sl) {
             test.ifError(error);
-            ph.createPage(function (err,page) {
+            sl.createPage(function (err,page) {
                 test.ifError(err);
                 page.open('http://localhost:'+server.address().port, function (err, status) {
                     test.ifError(err);
@@ -41,8 +41,8 @@ module.exports = {
                     page.renderBase64('png', function (err, imagedata) {
                         test.ifError(err);
                         test.equal(bufferHash(new Buffer(imagedata, 'base64')), fileHash(verifyFilename));
-                        ph.on('exit', function () { test.done() });
-                        ph.exit();
+                        sl.on('exit', function () { test.done() });
+                        sl.exit();
                     });
                 });
             });

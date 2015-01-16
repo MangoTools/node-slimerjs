@@ -1,22 +1,22 @@
 var http = require('http');
-var phantom = require('../node-phantom-simple');
+var slimer = require('../node-slimerjs');
 var server;
 
 module.exports = {
     setUp: function (cb) {
         server = http.createServer(function(request,response){
             response.writeHead(200,{"Content-Type": "text/html"});
-            response.end('<html><head><script>window.callPhantom({ msg: "callPhantom" }); conXsole.log("cause-an-error");</script></head><body><h1>Hello World</h1></body></html>');
+            response.end('<html><head><script>window.callSlimer({ msg: "callSlimer" }); conXsole.log("cause-an-error");</script></head><body><h1>Hello World</h1></body></html>');
         }).listen(cb);
     },
     tearDown: function (cb) {
         server.close(cb);
     },
-    testPhantomPagePushNotifications: function (test) {
+    testSlimerPagePushNotifications: function (test) {
         var url = 'http://localhost:'+server.address().port+'/';
         var onLoadFinishedFired = false;
-        phantom.create(errOr(function(ph){
-            ph.createPage(errOr(function(page){
+        slimer.create(errOr(function(sl){
+            sl.createPage(errOr(function(page){
                 var events = registerCallbacks(page);
 
                 page.open(url, errOr(function(status){
@@ -33,7 +33,7 @@ module.exports = {
                         test.equal(events.onResourceReceived[0].stage, 'start');
                         test.equal(events.onResourceReceived[1].stage, 'end');
 
-                        test.deepEqual(events.onCallback, [{ msg: "callPhantom" }]);
+                        test.deepEqual(events.onCallback, [{ msg: "callSlimer" }]);
                         test.deepEqual(events.onConsoleMessage, ['POW', 'WOW']);
 
                         // console.log(JSON.stringify(events.onError));
@@ -50,13 +50,13 @@ module.exports = {
                         }, errOr(function(){
                             test.deepEqual(events.onConsoleMessage, ['A', 'B']);
 
-                            ph.createPage(errOr(function(page){
+                            sl.createPage(errOr(function(page){
                                 page.onLoadFinished = function(){
                                     test.ok(true);
-                                    ph.on('exit', function () {
+                                    sl.on('exit', function () {
                                         test.done();
                                     })
-                                    ph.exit();
+                                    sl.exit();
                                 };
                                 page.open(url);
                             }));

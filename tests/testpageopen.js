@@ -1,5 +1,5 @@
 var http = require('http');
-var phantom = require('../node-phantom-simple');
+var slimer = require('../node-slimerjs');
 var server;
 
 module.exports = {
@@ -12,19 +12,19 @@ module.exports = {
     tearDown: function (cb) {
         server.close(cb);
     },
-    testPhantomPageOpen: function (test) {
-        phantom.create(function (error,ph) {
-            // console.log("Phantom created...");
+    testSlimerPageOpen: function (test) {
+        slimer.create(function (error,sl) {
+            // console.log("Slimer created...");
             test.ifError(error);
-            ph.createPage(function (err,page) {
+            sl.createPage(function (err,page) {
                 test.ifError(err);
                 page.open('http://localhost:'+server.address().port, function (err,status) {
                     test.ifError(err);
                     test.equal(status,'success');
-                    ph.on('exit', function () {
+                    sl.on('exit', function () {
                         test.done();
                     })
-                    ph.exit();
+                    sl.exit();
                 });
             });
         }, {ignoreErrorPattern: /CoreText performance note/});

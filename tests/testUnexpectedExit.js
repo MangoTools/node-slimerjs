@@ -1,10 +1,10 @@
-var phantom=require('../node-phantom-simple');
+var slimer=require('../node-slimerjs');
 
 exports.testUnexpectedExit = function(test) {
-    phantom.create(function (error, ph) {
+    slimer.create(function (error, sl) {
         test.ifError(error);
-        ph.createPage(function (err,page) {
-            ph.exit();  // exit the phantom process at a strange time
+        sl.createPage(function (err,page) {
+            sl.exit();  // exit the slimer process at a strange time
             page.open('http://www.google.com', function(err, result) {
               test.ok(!!err); // we expect an error
               test.done();
