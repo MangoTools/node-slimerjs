@@ -63,22 +63,22 @@ function wrapArray(arr) {
 
 exports.create = function (callback, options) {
     if (options === undefined) options = {};
-    if (options.phantomPath === undefined) options.phantomPath = 'slimerjs';
+    if (options.slimerPath === undefined) options.slimerPath = 'slimerjs';
     if (options.parameters === undefined) options.parameters = {};
 
-    function spawnPhantom (callback) {
+    function spawnSlimer (callback) {
         var args=[];
         for(var parm in options.parameters) {
             args.push('--' + parm + '=' + options.parameters[parm]);
         }
         args = args.concat([__dirname + '/bridge.js']);
 
-        var phantom = spawn(options.phantomPath, args);
+        var slimer = spawn(options.slimerPath, args);
 
         // Ensure that the child process is closed when this process dies
         var closeChild = function () {
             try {
-                phantom.kill();
+                slimer.kill();
             } catch(e) {}
             process.exit(1);
         };
@@ -95,18 +95,18 @@ exports.create = function (callback, options) {
 
         process.on('uncaughtException', uncaughtHandler);
 
-        phantom.once('error', function (err) {
+        slimer.once('error', function (err) {
         	callback(err);
         });
 
-        phantom.stderr.on('data', function (data) {
+        slimer.stderr.on('data', function (data) {
             if (options.ignoreErrorPattern && options.ignoreErrorPattern.exec(data)) {
                 return;
             }
-            return console.warn('phantom stderr: '+data);
+            return console.warn('slimer stderr: '+data);
         });
         var exitCode = 0;
-        phantom.once('exit', function (code) {
+        slimer.once('exit', function (code) {
             ['SIGINT', 'SIGTERM'].forEach(function(sig) {
                 process.removeListener(sig, closeChild);
             });
@@ -115,23 +115,23 @@ exports.create = function (callback, options) {
         });
 
         // Wait for "Ready" line
-        phantom.stdout.once('data', function (data) {
+        slimer.stdout.once('data', function (data) {
             // setup normal listener now
-            phantom.stdout.on('data', function (data) {
-                return console.log('phantom stdout: '+data);
+            slimer.stdout.on('data', function (data) {
+                return console.log('slimer stdout: '+data);
             });
             
             var matches = data.toString().match(/Ready \[(\d+)\]/);
             if (!matches) {
-                phantom.kill();
-                return callback("Unexpected output from PhantomJS: " + data);
+                slimer.kill();
+                return callback("Unexpected output from SlimerJS: " + data);
             }
 
-            var phantom_pid = parseInt(matches[1], 0);
+            var slimer_pid = parseInt(matches[1], 0);
 
             // Now need to figure out what port it's listening on - since
-            // Phantom is busted and can't tell us this we need to use lsof on mac, and netstat on Linux
-            // Note that if phantom could tell you the port it ends up listening
+            // Slimer is busted and can't tell us this we need to use lsof on mac, and netstat on Linux
+            // Note that if slimer could tell you the port it ends up listening
             // on we wouldn't need to do this - server.port returns 0 when you ask
             // for port 0 (i.e. random free port). If they ever fix that this will
             // become much simpler
@@ -151,12 +151,12 @@ exports.create = function (callback, options) {
                             cmd = 'netstat -ano | grep %d';
                             break;
                 default:
-                            phantom.kill();
+                            slimer.kill();
                             return callback("Your OS is not supported yet. Tell us how to get the listening port based on PID");
             }
 
             // We do this twice - first to get ports this process is listening on
-            // and again to get ports phantom is listening on. This is to work
+            // and again to get ports slimer is listening on. This is to work
             // around this bug in libuv: https://github.com/joyent/libuv/issues/962
             // - this is only necessary when using cluster, but it's here regardless
             var my_pid_command = util.format(cmd, process.pid);
@@ -173,12 +173,12 @@ exports.create = function (callback, options) {
                     ports.push(match[1]);
                 }
 
-                var phantom_pid_command = util.format(cmd, phantom_pid);
+                var slimer_pid_command = util.format(cmd, slimer_pid);
 
-                exec(phantom_pid_command, function (err, stdout, stderr) {
+                exec(slimer_pid_command, function (err, stdout, stderr) {
                     if (err !== null) {
-                        phantom.kill();
-                        return callback("Error executing command to extract phantom ports: " + err);
+                        slimer.kill();
+                        return callback("Error executing command to extract slimer ports: " + err);
                     }
                     var port;
                     while (match = re.exec(stdout)) {
@@ -188,28 +188,28 @@ exports.create = function (callback, options) {
                     }
 
                     if (!port) {
-                        phantom.kill();
+                        slimer.kill();
                         return callback("Error extracting port from: " + stdout);
                     }
 
-                    callback(null, phantom, port);
+                    callback(null, slimer, port);
                 });
             });
         });
 
-        setTimeout(function () {    //wait a bit to see if the spawning of phantomjs immediately fails due to bad path or similar
+        setTimeout(function () {    //wait a bit to see if the spawning of slimerjs immediately fails due to bad path or similar
         	if (exitCode !== 0) {
-        		return callback("Phantom immediately exited with: " + exitCode);
+        		return callback("Slimer immediately exited with: " + exitCode);
         	}
         },100);
     };
     
-    spawnPhantom(function (err, phantom, port) {
+    spawnSlimer(function (err, slimer, port) {
         if (err) {
             return callback(err);
         }
 
-        // console.log("Phantom spawned with web server on port: " + port);
+        // console.log("Slimer spawned with web server on port: " + port);
 
         var pages = {};
 
@@ -289,7 +289,7 @@ exports.create = function (callback, options) {
             return page;            
         }
 
-        var poll_func = setup_long_poll(phantom, port, pages, setup_new_page);
+        var poll_func = setup_long_poll(slimer, port, pages, setup_new_page);
 
         var request_queue = queue(function (paramarr, next) {
             var params = paramarr[0];
@@ -305,7 +305,7 @@ exports.create = function (callback, options) {
                 method: 'POST',
             }
 
-            phantom.POSTING = true;
+            slimer.POSTING = true;
 
             var req = http.request(http_opts, function (res) {
                 // console.log("Got a response: " + res.statusCode);
@@ -316,7 +316,7 @@ exports.create = function (callback, options) {
                     data += chunk;
                 });
                 res.on('end', function () {
-                    phantom.POSTING = false;
+                    slimer.POSTING = false;
                     if (!data) {
                         next();
                         return callback("No response body for page." + method + "()");
@@ -358,7 +358,7 @@ exports.create = function (callback, options) {
         });
 
         var proxy = {
-            process: phantom,
+            process: slimer,
             createPage: function (callback) {
                 request_queue.push([[0,'createPage'], callbackOrDummy(callback, poll_func)]);
             },
@@ -381,11 +381,11 @@ exports.create = function (callback, options) {
                 request_queue.push([[0, 'getProperty', property], callbackOrDummy(callback, poll_func)]);
             },
             exit: function(callback){
-                phantom.kill('SIGTERM');
+                slimer.kill('SIGTERM');
                 callbackOrDummy(callback)();
             },
             on: function () {
-                phantom.on.apply(phantom, arguments);
+                slimer.on.apply(slimer, arguments);
             },
         };
         
@@ -393,7 +393,7 @@ exports.create = function (callback, options) {
     });
 }
 
-function setup_long_poll (phantom, port, pages, setup_new_page) {
+function setup_long_poll (slimer, port, pages, setup_new_page) {
     // console.log("Setting up long poll");
 
     var http_opts = {
@@ -404,11 +404,11 @@ function setup_long_poll (phantom, port, pages, setup_new_page) {
     }
 
     var dead = false;
-    phantom.once('exit', function () { dead = true; });
+    slimer.once('exit', function () { dead = true; });
 
     var poll_func = function (cb) {
-        if (dead) return cb('Phantom Process died');
-        if (phantom.POSTING) return cb();
+        if (dead) return cb('Slimer Process died');
+        if (slimer.POSTING) return cb();
         // console.log("Polling...");
         var req = http.get(http_opts, function(res) {
             res.setEncoding('utf8');
@@ -418,15 +418,15 @@ function setup_long_poll (phantom, port, pages, setup_new_page) {
             });
             res.on('end', function () {
                 // console.log("Poll results: " + data);
-                if (dead) return cb('Phantom Process died');
+                if (dead) return cb('Slimer Process died');
                 try {
                     var results = JSON.parse(data);
                 }
                 catch (err) {
-                    console.warn("Error parsing JSON from phantom: " + err);
-                    console.warn("Data from phantom was: " + data);
-                    return cb("Error parsing JSON from phantom: " + err
-                            + "\nData from phantom was: " + data);
+                    console.warn("Error parsing JSON from slimer: " + err);
+                    console.warn("Data from slimer was: " + data);
+                    return cb("Error parsing JSON from slimer: " + err
+                            + "\nData from slimer was: " + data);
                 }
                 // if (results.length > 0) {
                 //     console.log("Long poll results: ", results);
@@ -455,15 +455,15 @@ function setup_long_poll (phantom, port, pages, setup_new_page) {
                         }
                     }
                     else {
-                        var cb = callbackOrDummy(phantom[r.callback]);
-                        cb.apply(phantom, r.args);
+                        var cb = callbackOrDummy(slimer[r.callback]);
+                        cb.apply(slimer, r.args);
                     }
                 });
                 cb();
             });
         });
         req.on('error', function (err) {
-            if (dead || phantom.killed) return;
+            if (dead || slimer.killed) return;
             console.warn("Poll Request error: " + err);
         });
     };
