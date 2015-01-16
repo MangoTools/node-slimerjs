@@ -7,8 +7,8 @@ var page_id = 1;
 
 var callback_stack = [];
 
-slimer.onError = function (msg, trace) {
-	var msgStack = ['PHANTOM ERROR: ' + msg];
+phantom.onError = function (msg, trace) {
+	var msgStack = ['SLIMMER ERROR: ' + msg];
 	if (trace && trace.length) {
 	    msgStack.push('TRACE:');
 	    trace.forEach(function(t) {
@@ -16,17 +16,19 @@ slimer.onError = function (msg, trace) {
 	    });
 	}
 	system.stderr.writeLine(msgStack.join('\n'));
-	slimer.exit(1);
+	phantom.exit(1);
 }
 
 function page_open (res, page, args) {
-	page.open.apply(page, args.concat(function (success) {
-		res.statusCode = 200;
-		res.setHeader('Content-Type', 'application/json');
-		res.write(JSON.stringify(success));
-		// console.log("Close1");
-		res.close();
-	}))
+	// open the page with url = args[0]
+	page.open(args[0], function(status){
+		if (status == "success") {
+			res.statusCode = 200;
+			res.setHeader('Content-Type', 'application/json');
+			res.write(JSON.stringify(status));
+			res.close();
+		}
+	})
 }
 
 function include_js (res, page, args) {
@@ -49,8 +51,10 @@ function include_js (res, page, args) {
 	}));
 }
 
+
 var service = webserver.listen('127.0.0.1:0', function (req, res) {
-	// console.log("Got a request of type: " + req.method);
+
+	 //console.log("Got a request of type: " + JSON.stringify(req));
 	if (req.method === 'GET') {
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'application/json');
@@ -61,29 +65,34 @@ var service = webserver.listen('127.0.0.1:0', function (req, res) {
 		res.close();
 	}
 	else if (req.method === 'POST') {
-		var request = JSON.parse(req.post);
+
+		var request = JSON.parse(req._body);
 		var method  = request.method;
 		var output  = null;
 		var error   = null;
+
+
 		if (request.page) {
 			if (method === 'open') { // special case this as it's the only one with a callback
 				return page_open(res, pages[request.page], request.args);
 			}
 			else if (method === 'includeJs') {
+
 				return include_js(res, pages[request.page], request.args);
 			}
 			try {
-				// console.log("Calling: page." + method + "(" + request.args + ")");
 				var output = pages[request.page][method].apply(pages[request.page], request.args);
-				// console.log("Got output: ", output);
+
 			}
 			catch (err) {
+				console.log(err);
 				error = err;
 			}
 		}
 		else {
 			try {
 				output = global_methods[method].apply(global_methods, request.args);
+
 			}
 			catch (err) {
 				error = err;
@@ -119,10 +128,10 @@ function setup_callbacks (id, page) {
         page[cb] = function (parm) {
             var args = Array.prototype.slice.call(arguments);
             if ((cb==='onResourceRequested') && (parm.url.indexOf('data:image') === 0)) return;
-            // console.log("Callback: " + cb);
+             //.log("Callback: " + cb);
             if (cb==='onClosing') { args = [] };
             callback_stack.push({'page_id': id, 'callback': cb, 'args': args});
-	        // console.log("Callback stack size now: " + callback_stack.length);
+	         //console.log("Callback stack size now: " + callback_stack.length);
         };
 	});
 	// Special case this
@@ -157,33 +166,33 @@ var global_methods = {
 	},
 
 	injectJs: function (filename) {
-		return slimer.injectJs(filename);
+		return phantom.injectJs(filename);
 	},
 
 	exit: function (code) {
-		return slimer.exit(code);
+		return phantom.exit(code);
 	},
 
 	addCookie: function (cookie) {
-		return slimer.addCookie(cookie);
+		return phantom.addCookie(cookie);
 	},
 
 	clearCookies: function () {
-		return slimer.clearCookies();
+		return phantom.clearCookies();
 	},
 
 	deleteCookie: function (name) {
-		return slimer.deleteCookie(name);
+		return phantom.deleteCookie(name);
 	},
 
 	getProperty: function (prop) {
-		return slimer[prop];
+		return phantom[prop];
 	},
 
 	setProperty: function (prop, value) {
-		slimer[prop] = value;
+		phantom[prop] = value;
 		return true;
-	},
+	}
 }
 
-console.log("Ready [" + system.pid + "]");
+console.log("Ready [" + webserver.port + "]");

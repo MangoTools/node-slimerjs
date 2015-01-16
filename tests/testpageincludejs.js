@@ -7,7 +7,7 @@ module.exports = {
         server = http.createServer(function (request,response) {
             if (request.url==='/test.js') {
                 response.writeHead(200, {"Content-Type": "text/javascript"});
-                response.end('document.getElementsByTagName("h1")[0].innerText="Hello Test";');
+                response.end('document.querySelector("h1").textContent="Hello Test";');
             }
             else {
                 response.writeHead(200,{"Content-Type": "text/html"});

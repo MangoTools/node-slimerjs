@@ -21,10 +21,11 @@ module.exports = {
                     test.ifError(err);
                     test.equal(status,'success');
                     page.evaluate(function () {
-                        return { h1text: document.getElementsByTagName('h1')[0].innerText };
+                        return document.querySelector("h1").textContent;
                     }, function (err, result) {
                         test.ifError(err);
-                        test.equal(result.h1text,'Hello World');
+                        test.equal(result,'Hello World');
+
                         sl.on('exit', function () {
                             test.done();
                         });
@@ -33,5 +34,5 @@ module.exports = {
                 });
             });
         }, {ignoreErrorPattern: /CoreText performance note/});
-    },
+    }
 };

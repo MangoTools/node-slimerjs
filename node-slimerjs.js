@@ -34,7 +34,7 @@ function callbackOrDummy (callback, poll_func) {
     if (poll_func) {
         return function () {
             var args = Array.prototype.slice.call(arguments);
-            // console.log("Polling for results before returning with: " + JSON.stringify(args));
+            //console.log("Polling for results before returning with: " + JSON.stringify(args));
             poll_func(function (err) {
                 // console.log("Inside...");
                 if (err) {
@@ -127,74 +127,11 @@ exports.create = function (callback, options) {
                 return callback("Unexpected output from SlimerJS: " + data);
             }
 
-            var slimer_pid = parseInt(matches[1], 0);
+            var port = parseInt(matches[1], 0);
+            callback(null, slimer, port);
+            //callback(null, slimer, 62611);
 
-            // Now need to figure out what port it's listening on - since
-            // Slimer is busted and can't tell us this we need to use lsof on mac, and netstat on Linux
-            // Note that if slimer could tell you the port it ends up listening
-            // on we wouldn't need to do this - server.port returns 0 when you ask
-            // for port 0 (i.e. random free port). If they ever fix that this will
-            // become much simpler
-            var platform = require('os').platform();
-            var cmd = null;
-            switch (platform) {
-                case 'linux':
-                            cmd = 'netstat -nlp | grep "[[:space:]]%d/"';
-                            break;
-                case 'darwin':
-                            cmd = 'lsof -p %d | grep LISTEN';
-                            break;
-                case 'win32':
-                            cmd = 'netstat -ano | findstr /R "\\<%d\\>"';
-                            break;
-                case 'cygwin':
-                            cmd = 'netstat -ano | grep %d';
-                            break;
-                default:
-                            slimer.kill();
-                            return callback("Your OS is not supported yet. Tell us how to get the listening port based on PID");
-            }
 
-            // We do this twice - first to get ports this process is listening on
-            // and again to get ports slimer is listening on. This is to work
-            // around this bug in libuv: https://github.com/joyent/libuv/issues/962
-            // - this is only necessary when using cluster, but it's here regardless
-            var my_pid_command = util.format(cmd, process.pid);
-
-            exec(my_pid_command, function (err, stdout, stderr) {
-                if (err !== null) {
-                    // This can happen if grep finds no matching lines, so ignore it.
-                    stdout = '';
-                }
-                var re = /(?:127\.0\.0\.1|localhost):(\d+)/ig, match;
-                var ports = [];
-                
-                while (match = re.exec(stdout)) {
-                    ports.push(match[1]);
-                }
-
-                var slimer_pid_command = util.format(cmd, slimer_pid);
-
-                exec(slimer_pid_command, function (err, stdout, stderr) {
-                    if (err !== null) {
-                        slimer.kill();
-                        return callback("Error executing command to extract slimer ports: " + err);
-                    }
-                    var port;
-                    while (match = re.exec(stdout)) {
-                        if (ports.indexOf(match[1]) == -1) {
-                            port = match[1];
-                        }
-                    }
-
-                    if (!port) {
-                        slimer.kill();
-                        return callback("Error extracting port from: " + stdout);
-                    }
-
-                    callback(null, slimer, port);
-                });
-            });
         });
 
         setTimeout(function () {    //wait a bit to see if the spawning of slimerjs immediately fails due to bad path or similar
@@ -209,7 +146,7 @@ exports.create = function (callback, options) {
             return callback(err);
         }
 
-        // console.log("Slimer spawned with web server on port: " + port);
+        console.log("Slimer spawned with web server on port: " + port);
 
         var pages = {};
 
@@ -268,9 +205,9 @@ exports.create = function (callback, options) {
                         }, selector);
                     };
 
-                    timeout = timeout || 10000; //default timeout is 10 sec;
+                    timeout = timeout || 100; //default timeout is 10 sec;
                     setTimeout(testForSelector, timeoutInterval);
-                },
+                }
             };
             methods.forEach(function (method) {
                 page[method] = function () {
@@ -292,23 +229,25 @@ exports.create = function (callback, options) {
         var poll_func = setup_long_poll(slimer, port, pages, setup_new_page);
 
         var request_queue = queue(function (paramarr, next) {
+
             var params = paramarr[0];
             var callback = paramarr[1];
             var page = params[0];
             var method = params[1];
             var args = params.slice(2);
-            
+
             var http_opts = {
-                hostname: '127.0.0.1',
+                hostname: 'localhost',
                 port: port,
                 path: '/',
-                method: 'POST',
+                method: 'POST'
             }
 
             slimer.POSTING = true;
 
             var req = http.request(http_opts, function (res) {
-                // console.log("Got a response: " + res.statusCode);
+
+                 //console.log("Got a response: " + res.statusCode);
                 var err = res.statusCode == 500 ? true : false;
                 res.setEncoding('utf8');
                 var data = '';
@@ -322,7 +261,7 @@ exports.create = function (callback, options) {
                         return callback("No response body for page." + method + "()");
                     }
                     var results = JSON.parse(data);
-                    // console.log("Response: ", results);
+                   // console.log("Response: ", results);
                     
                     if (err) {
                         next();
@@ -344,7 +283,7 @@ exports.create = function (callback, options) {
             });
 
             req.on('error', function (err) {
-                console.warn("Request() error evaluating " + method + "() call: " + err);
+               // console.warn("Request() error evaluating " + method + "() call: " + err);
                 callback("Request() error evaluating " + method + "() call: " + err);
             })
 
@@ -363,6 +302,7 @@ exports.create = function (callback, options) {
                 request_queue.push([[0,'createPage'], callbackOrDummy(callback, poll_func)]);
             },
             injectJs: function (filename,callback) {
+
                 request_queue.push([[0,'injectJs', filename], callbackOrDummy(callback, poll_func)]);
             },
             addCookie: function (cookie, callback) {
@@ -381,12 +321,13 @@ exports.create = function (callback, options) {
                 request_queue.push([[0, 'getProperty', property], callbackOrDummy(callback, poll_func)]);
             },
             exit: function(callback){
+
                 slimer.kill('SIGTERM');
                 callbackOrDummy(callback)();
             },
             on: function () {
                 slimer.on.apply(slimer, arguments);
-            },
+            }
         };
         
         callback(null, proxy);
@@ -397,10 +338,10 @@ function setup_long_poll (slimer, port, pages, setup_new_page) {
     // console.log("Setting up long poll");
 
     var http_opts = {
-        hostname: '127.0.0.1',
+        hostname: 'localhost',
         port: port,
         path: '/',
-        method: 'GET',
+        method: 'GET'
     }
 
     var dead = false;
@@ -464,7 +405,7 @@ function setup_long_poll (slimer, port, pages, setup_new_page) {
         });
         req.on('error', function (err) {
             if (dead || slimer.killed) return;
-            console.warn("Poll Request error: " + err);
+           // console.warn("Poll Request error: " + err);
         });
     };
 

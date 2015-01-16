@@ -17,7 +17,7 @@ function fileHash (filename) {
 function bufferHash(buffer){
     var shasum = crypto.createHash('sha256');
     shasum.update(buffer);
-    return shasum.digest('hex');    
+    return shasum.digest('hex');
 }
 
 module.exports = {
@@ -47,5 +47,5 @@ module.exports = {
                 });
             });
         }, {ignoreErrorPattern: /CoreText performance note/});
-    },
+    }
 }

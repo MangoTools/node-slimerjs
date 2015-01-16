@@ -18,7 +18,8 @@ module.exports = {
             test.ifError(error);
             sl.createPage(function (err,page) {
                 test.ifError(err);
-                page.open('http://localhost:'+server.address().port, function (err,status) {
+               page.open('http://localhost:'+server.address().port, function (err,status) {
+
                     test.ifError(err);
                     test.equal(status,'success');
                     sl.on('exit', function () {

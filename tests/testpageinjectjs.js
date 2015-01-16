@@ -24,7 +24,7 @@ module.exports = {
             test.ifError(error);
             sl.createPage(function(err,page){
                 test.ifError(err);
-                page.open('http://localhost:'+server.address().port,function(err,status){
+                page.open('http://127.0.0.1:'+server.address().port,function(err,status){
                     test.ifError(err);
                     test.equal(status,'success');
                     page.injectJs('tests/files/modifytest.js',function(err){
