@@ -2,7 +2,7 @@
   "author": "Mango Tools ( info@mango.tools)",
   "name": "node-slimerjs",
   "description": "Simple and reliable bridge between Node.js and SlimerJS",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/MangoTools/node-slimerjs",
   "repository": {
     "type": "git",
