@@ -1,165 +1,75 @@
-# node-slimerjs
+# SlimerJS
+
+SlimerJS is a scriptable browser. It allows you to manipulate a web page
+with a Javascript script: opening a webpage, clicking on links, modifying the content...
+It is useful to do functional tests, page automaton, network monitoring, screen capture etc.
+
+Go to [http://slimerjs.org] to know more and to access to the documentation
 
 
----------------
+# Install
 
-This is a bridge between [SlimerJs](http://slimerjs.org/) and
-[Node.js](http://nodejs.org/).
+- Install [Firefox](http://getfirefox.com),
+  or [XulRunner](http://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/19.0.2/runtimes/) (both version 18 or more)
+- [Download the latest package](http://download.slimerjs.org/slimerjs-0.5RC1.zip) or
+  [the source code of SlimerJS](https://github.com/laurentj/slimerjs/archive/master.zip) if you didn't it yet
+- On windows, a .bat is provided, but you can also launch slimer from a "true" console. In this case, you should install
+  [Cygwin](http://www.cygwin.com/) or any other unix environment to launch slimerjs.
+- SlimerJS needs to know where Firefox or XulRunner is stored. It tries to discover
+  itself the path but can fail. You must then set the environment variable
+  SLIMERJSLAUNCHER, which should contain the full path to the firefox binary:
+   - On linux: ```export SLIMERJSLAUNCHER=/usr/bin/firefox```
+   - on Windows: ```SET SLIMERJSLAUNCHER="c:\Program Files\Mozilla Firefox\firefox.exe```
+   - On windows with cygwin : ```export SLIMERJSLAUNCHER="/cygdrive/c/program files/mozilla firefox/firefox.exe"```
+   - On MacOS: ```export SLIMERJSLAUNCHER=/Applications/Firefox.app/Contents/MacOS/firefox```
+- You can of course set this variable in your .bashrc, .profile or in the computer
+   properties on Windows.
 
-This project is inspired from the excellent [node-phantom-simple](https://github.com/baudehlo/node-phantom-simple) project.
+# Launching SlimerJS
 
+Open a terminal and go to the directory of SlimerJS (src/ if you downloaded the source code). Then launch:
 
-
-Requirements
-------------
-You will need to install SlimerJS first. The bridge assumes that the
-"slimerjs" binary is available in the PATH, or you will need to pass its path
-into the `slimer.create() method.
-
-For running the tests you will need [Expresso](http://visionmedia.github.com/expresso/).
-The tests require SlimerJS 0.9.2 or newer to pass.
-
-Installing
-----------
-
-    npm install node-slimerjs
-
-
-Usage
------
-You can use it exactly like you would use Node-Phantom, and the entire API of
-SlimerJs should work, with the exception that every method call takes a
-callback (always as the last parameter) instead of returning values.
-
-For example this is an adaptation of a
-[web scraping example](http://net.tutsplus.com/tutorials/javascript-ajax/web-scraping-with-node-js/) :
-
-```javascript
-var slimer =require('node-slimerJs');
-slimer.create(function(err,ph) {
-  return sl.createPage(function(err,page) {
-    return page.open("http://tilomitra.com/repository/screenscrape/ajax.html", function(err,status) {
-      console.log("opened site? ", status);
-      page.includeJs('http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js', function(err) {
-        //jQuery Loaded.
-        //Wait for a bit for AJAX content to load on the page. Here, we are waiting 5 seconds.
-        setTimeout(function() {
-          return page.evaluate(function() {
-            //Get what you want from the page using jQuery. A good way is to populate an object with all the jQuery commands that you need and then return the object.
-            var h2Arr = [],
-            pArr = [];
-            $('h2').each(function() {
-              h2Arr.push($(this).html());
-            });
-            $('p').each(function() {
-              pArr.push($(this).html());
-            });
-
-            return {
-              h2: h2Arr,
-              p: pArr
-            };
-          }, function(err,result) {
-            console.log(result);
-            ph.exit();
-          });
-        }, 5000);
-      });
-	});
-  });
-});
+```
+    ./slimerjs myscript.js
 ```
 
-### slimer.create(callback, options)
+In the Windows commands console:
 
-`options` is an optional object with options for how to start PhantomJS.
-`options.parameters` is an array of parameters that will be passed to PhantomJS
-on the commandline.
-
-For example
-
-```javascript
-slimer.create(callback, {parameters: {'load-images': 'yes'}})
 ```
-
-will start slimer as:
-
-```bash
-slimerjs --load-images=yes
-```
-
-You may also pass in a custom path if you need to select a specific instance
-of PhantomJS or it is not present in PATH environment. This can for example
-be used together with the [SlimerJS package](https://npmjs.org/package/slimerjs)
-like so:
-
-```javascript
-slimer.create(callback, {slimerPath: require('slimerjs').path})
+    slimerjs.bat myscript.js
 ```
 
 
-`options.ignoreErrorPattern` is a regular expression that can be used to silence spurious
-warnings generated by slimerJs.
+The given script myscripts.js is then executed in a window. If your script is
+short, you probably won't see this window.
 
-On Mavericks, you can use: `{ignoreErrorPattern: /CoreText/}` to suppress some common annoying font-related warnings.
+You can for example launch some tests if you execute SlimerJS from the source code:
 
-WebPage Callbacks
------
-
-All of the WebPage callbacks have been implemented including `onCallback`, and
-are set the same way as with the core slimerJs library:
-
-```javascript
-page.onResourceReceived = function(response) {
-    console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(response));
-};
+```
+    ./slimerjs ../test/initial-tests.js
 ```
 
-This includes the `onPageCreated` callback which receives a new `page` object.
+# Launching a headless SlimerJS
 
-Properties
------
+There is a tool called xvfb, available on Linux and MacOS. It allows to launch
+any "graphical" programs without the need of X-Windows environment. Windows of
+the application won't be shown and will be drawn only in memory.
 
-Properties on the [WebPage](https://github.com/laurentj/slimerjs)
-and [SlimerJs](https://github.com/laurentj/slimerjs)
-objects are accessed via the `get()/set()` method calls:
+Install it from your prefered repository (```sudo apt-get install xvfb```
+with debian/ubuntu).
 
-```javascript
-page.get('content', function (err,html) {
-  console.log("Page HTML is: " + html);
-})
-page.set('zoomfactor', 0.25, function () {
-  page.render('capture.png');
-})
+Then launch SlimerJS like this:
+
+```
+    xvfb-run ./slimerjs myscript.js
 ```
 
-License - MIT
------
+You won't see any windows. If you have any problems with xvfb, see its
+documentation.
 
-Copyright (c) 2013 Matt Sergeant
+# Getting help
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-
-
-Other
------
-Made by Jean-Baptiste Blanc for [Mango Tools](http://mango.tools).
-Made by Adrien Boscfor [Mango Tools](http://mango.tools).
-
+- Ask your questions on the dedicated [mailing list](https://groups.google.com/forum/#!forum/slimerjs).
+- Discuss with us on IRC: channel #slimerjs on irc.mozilla.org.
+- Read the faq [on the website](http://slimerjs.org/faq.html).
+- Read [the documentation](http://docs.slimerjs.org/current/)

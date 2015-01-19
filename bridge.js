@@ -54,24 +54,25 @@ function include_js (res, page, args) {
 
 var service = webserver.listen('127.0.0.1:0', function (req, res) {
 
-	 //console.log("Got a request of type: " + JSON.stringify(req));
+	//console.log("Got a request of type: " + JSON.stringify(req));
+	//console.log(req.method);
 	if (req.method === 'GET') {
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'application/json');
-		// console.log("Sending back " + callback_stack.length + " callbacks");
+		//console.log("Sending back " + callback_stack.length + " callbacks");
 		res.write(JSON.stringify(callback_stack));
 		callback_stack = [];
-		// console.log("Close3");
+		//console.log("Close3");
 		res.close();
 	}
 	else if (req.method === 'POST') {
 
-		var request = JSON.parse(req._body);
+		var request = JSON.parse(req.post);
 		var method  = request.method;
 		var output  = null;
 		var error   = null;
 
-
+		//console.log(request);
 		if (request.page) {
 			if (method === 'open') { // special case this as it's the only one with a callback
 				return page_open(res, pages[request.page], request.args);

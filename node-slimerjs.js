@@ -1,7 +1,7 @@
 "use strict";
 
 var http            = require('http');
-var spawn 			= require('child_process').spawn;
+var spawn 	    = require('child_process').spawn;
 var exec            = require('child_process').exec;
 var util            = require('util');
 
@@ -63,7 +63,7 @@ function wrapArray(arr) {
 
 exports.create = function (callback, options) {
     if (options === undefined) options = {};
-    if (options.slimerPath === undefined) options.slimerPath = 'slimerjs';
+    if (options.slimerPath === undefined) options.slimerPath = './slimerjs';
     if (options.parameters === undefined) options.parameters = {};
 
     function spawnSlimer (callback) {
@@ -72,9 +72,9 @@ exports.create = function (callback, options) {
             args.push('--' + parm + '=' + options.parameters[parm]);
         }
         args = args.concat([__dirname + '/bridge.js']);
-
+	//console.log('launch ' + options.slimerPath + ' ' + args);
         var slimer = spawn(options.slimerPath, args);
-
+	
         // Ensure that the child process is closed when this process dies
         var closeChild = function () {
             try {
@@ -84,7 +84,7 @@ exports.create = function (callback, options) {
         };
 
         var uncaughtHandler = function (err) {
-            console.error(err.stack);
+            console.error('Slimer spawn err: ' + err.stack);
             closeChild();
         };
 
@@ -105,6 +105,7 @@ exports.create = function (callback, options) {
             }
             return console.warn('slimer stderr: '+data);
         });
+
         var exitCode = 0;
         slimer.once('exit', function (code) {
             ['SIGINT', 'SIGTERM'].forEach(function(sig) {
@@ -116,6 +117,7 @@ exports.create = function (callback, options) {
 
         // Wait for "Ready" line
         slimer.stdout.once('data', function (data) {
+	    //console.log('bridge send: '+ data);
             // setup normal listener now
             slimer.stdout.on('data', function (data) {
                 return console.log('slimer stdout: '+data);
@@ -130,8 +132,6 @@ exports.create = function (callback, options) {
             var port = parseInt(matches[1], 0);
             callback(null, slimer, port);
             //callback(null, slimer, 62611);
-
-
         });
 
         setTimeout(function () {    //wait a bit to see if the spawning of slimerjs immediately fails due to bad path or similar
@@ -151,7 +151,7 @@ exports.create = function (callback, options) {
         var pages = {};
 
         var setup_new_page = function (id) {
-            // console.log("Page created with id: " + id);
+            console.log("Page created with id: " + id);
             var methods = [
                 'addCookie', 'childFramesCount', 'childFramesName', 'clearCookies', 'close',
                 'currentFrameName', 'deleteCookie', 'evaluateJavaScript',
@@ -260,6 +260,7 @@ exports.create = function (callback, options) {
                         next();
                         return callback("No response body for page." + method + "()");
                     }
+		    //console.log('data to parse: '+data);
                     var results = JSON.parse(data);
                    // console.log("Response: ", results);
                     
@@ -271,7 +272,7 @@ exports.create = function (callback, options) {
                     if (method === 'createPage') {
                         var id = results.page_id;
                         var page = setup_new_page(id);
-                        
+                        //console.log('prepare req for createPage');
                         next();
                         return callback(null, page);
                     }
@@ -299,7 +300,8 @@ exports.create = function (callback, options) {
         var proxy = {
             process: slimer,
             createPage: function (callback) {
-                request_queue.push([[0,'createPage'], callbackOrDummy(callback, poll_func)]);
+                //console.log("push a 'createPage'");
+		request_queue.push([[0,'createPage'], callbackOrDummy(callback, poll_func)]);
             },
             injectJs: function (filename,callback) {
 
