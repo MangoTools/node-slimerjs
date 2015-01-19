@@ -63,7 +63,7 @@ function wrapArray(arr) {
 
 exports.create = function (callback, options) {
     if (options === undefined) options = {};
-    if (options.slimerPath === undefined) options.slimerPath = './slimerjs';
+    if (options.slimerPath === undefined) options.slimerPath = './slimerjs/slimerjs';
     if (options.parameters === undefined) options.parameters = {};
 
     function spawnSlimer (callback) {

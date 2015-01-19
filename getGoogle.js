@@ -1,3 +1,5 @@
+// Must be launch by slimerjs
+
 //var system = require('system');
 var page   = require('webpage').create();
 
