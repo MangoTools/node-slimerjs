@@ -36,7 +36,7 @@ For example this is an adaptation of a
 
 ```javascript
 var slimer =require('node-slimerJs');
-slimer.create(function(err,ph) {
+slimer.create(function(err,sl) {
   return sl.createPage(function(err,page) {
     return page.open("http://tilomitra.com/repository/screenscrape/ajax.html", function(err,status) {
       console.log("opened site? ", status);
